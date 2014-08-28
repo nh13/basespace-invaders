@@ -44,7 +44,7 @@ class Samples:
         return filesToDownload
 
     @staticmethod
-    def download(clientKey, clientSecret, accessToken, sampleId=None, projectId=None, sampleName=None, projectName=None, outputDirectory='\.', createBsDir=True):
+    def download(clientKey=None, clientSecret=None, accessToken=None, sampleId=None, projectId=None, sampleName=None, projectName=None, outputDirectory='\.', createBsDir=True):
         '''
         Downloads sample-level files.
 
@@ -67,6 +67,8 @@ class Samples:
         :param projectId the BaseSpace project identifier
         :param sampleName the BaseSpace sample name
         :param projectName the BaseSpace project name
+        :param outputDirectory the root output directory
+        :param createBsDir true to recreate the path structure within BaseSpace, false otherwise
         '''
         appSessionId = ''
         apiServer = 'https://api.basespace.illumina.com/' # or 'https://api.cloud-hoth.illumina.com/'
@@ -76,7 +78,10 @@ class Samples:
         sampleFileLimit = 1024 
 
         # init the API
-        myAPI = BaseSpaceAPI(clientKey, clientSecret, apiServer, apiVersion, appSessionId, accessToken)
+        if None != clientKey:
+            myAPI = BaseSpaceAPI(clientKey, clientSecret, apiServer, apiVersion, appSessionId, accessToken)
+        else:
+            myAPI = BaseSpaceAPI(profile='DEFAULT')
 
         # get the current user
         user = myAPI.getUserById('current')
@@ -112,7 +117,7 @@ if __name__ == '__main__':
     
     parser = OptionParser()
 
-    group = OptionGroup(parser, "Required options")
+    group = OptionGroup(parser, "Credential options")
     group.add_option('-K', '--client-key', help='the developer.basespace.illumina.com client key', dest='clientKey', default=None)
     group.add_option('-S', '--client-secret', help='the developer.basespace.illumina.com client token', dest='clientSecret', default=None)
     group.add_option('-A', '--access-token', help='the developer.basespace.illumina.com access token', dest='accessToken', default=None)
@@ -137,9 +142,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
     options, args = parser.parse_args()
-    check_option(parser, options.clientKey, '-K')
-    check_option(parser, options.clientSecret, '-S')
-    check_option(parser, options.accessToken, '-A')
+    if None != options.clientKey:
+        #check_option(parser, options.clientKey, '-K')
+        check_option(parser, options.clientSecret, '-S')
+        check_option(parser, options.accessToken, '-A')
     if None == options.projectId and None == options.sampleId and None == options.projectName and None == options.sampleName:
         print 'One of the query options must be given.\n'
         parser.print_help()

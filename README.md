@@ -24,6 +24,23 @@ button.  Put dummy values if you encounter problems.
 5. In the Credentials tab, you will need "Client Key", "Client Secret", and "
 Access Token".
 
+You will need to provide the credentials for your app either via the command 
+line (security risk) or with a master config file (preferred).
+To create a master config file, create a file named ~/.basespace.cfg with the following content,
+filling in the clientKey, clientSecret, and accessToken (optionally appSessionId):
+<pre language="bash">
+<code>[DEFAULT]
+name = my new app
+clientKey =
+clientSecret = 
+accessToken = 
+appSessionId =
+apiServer = https://api.cloud-hoth.illumina.com/
+apiVersion = v1pre3
+</pre>
+</code>
+You can put in '' for appSessionId if you do not have one.
+
 ## Get sample files
 The <code>samples2files.py</code> script downloads 
 the sample-level files from BaseSpace.  The user can specify project Id, 
