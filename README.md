@@ -4,6 +4,15 @@ This contains a collection of scripts (one for now!) that I found useful to
 retrieve files from Illumina's BaseSpace.  Please run a script with no options 
 to see its usage.
 
+            _ __                    ##          ##             _ __
+         __( =  =- _                  ##      ##            __( =  =- _ 
+        (-       -  )__- -_         ##############         (-       -  )__- -_
+       (  -=  - )   -     _)      ####  ######  ####      (  -=  - )   -     _)
+      (_-= _(    =-    _=-      ######################   (_-= _(    =-    _=- 
+        -(     -    -  _)       ##  ##############  ##     -(     -    -  _)
+          -=__(__  _-)-         ##  ##          ##  ##       -=__(__  _-)-
+                -=-                   ####  ####                   -=-
+
 ## Pre-requisites
 
 ### Python BaseSpace SDK
