@@ -31,7 +31,7 @@ class Samples:
 
     @staticmethod
     def __get_files_to_download(myAPI, projectId, sampleId, sampleName, sampleLimit=1024, sampleFileLmit=1024):
-        filesToDownload = []
+        sampleToFiles = {}
         samples = myAPI.getSamplesByProject(Id=projectId, queryPars=qp({'Limit' : sampleLimit}))
         for sample in samples:
             if None != sampleId and sampleId != sample.Id:
@@ -39,9 +39,8 @@ class Samples:
             elif None != sampleName and sampleName != sample.Name:
                 continue
             sampleFiles = myAPI.getSampleFilesById(Id=sample.Id, queryPars=qp({'Limit' : sampleFileLmit}))
-            for sampleFile in sampleFiles:
-                filesToDownload.append(sampleFile)
-        return filesToDownload
+            sampleToFiles[sample.Id] = sampleFiles
+        return sampleToFiles
 
     @staticmethod
     def download(clientKey=None, clientSecret=None, accessToken=None, sampleId=None, projectId=None, sampleName=None, projectName=None, outputDirectory='\.', createBsDir=True):
@@ -86,25 +85,33 @@ class Samples:
         # get the current user
         user = myAPI.getUserById('current')
 
-        filesToDownload = []
+        sampleToFiles = {}
         if None != projectId:
-            filesToDownload = Samples.__get_files_to_download(myAPI, projectId, sampleId, sampleName, sampleLimit, sampleFileLimit)
+            sampleToFiles = Samples.__get_files_to_download(myAPI, projectId, sampleId, sampleName, sampleLimit, sampleFileLimit)
         else:
             myProjects = myAPI.getProjectByUser(qp({'Limit' : projectLimit}))
             for project in myProjects:
                 projectId = project.Id
                 if None != projectName and project.Name != projectName:
                     continue
-                filesToDownload = Samples.__get_files_to_download(myAPI, projectId, sampleId, sampleName, sampleLimit, sampleFileLimit)
-                if 0 < len(filesToDownload):
+                sampleToFiles = Samples.__get_files_to_download(myAPI, projectId, sampleId, sampleName, sampleLimit, sampleFileLimit)
+                if 0 < len(sampleToFiles):
                     break
-        print "Will download %d files." % len(filesToDownload)
-        for i in range(len(filesToDownload)):
-            sampleFile = filesToDownload[i]
-            print 'Downloading (%d/%d): %s' % ((i+1), len(filesToDownload), str(sampleFile))
-            print "File Path: %s" % sampleFile.Path
-            if not options.dryRun:
-                sampleFile.downloadFile(myAPI, outputDirectory, createBsDir=createBsDir)
+        numFiles = sum([len(sampleToFiles[sampleId]) for sampleId in sampleToFiles])
+        print "Will download files from %d ." % numFiles
+        i = 0
+        for sampleId in sampleToFiles:
+            for sampleFile in sampleToFiles[sampleId]:
+                print 'Downloading (%d/%d): %s' % ((i+1), numFiles, str(sampleFile))
+                print "BaseSpace File Path: %s" % sampleFile.Path
+                print "Sample Id: %s" % sampleId
+                if not options.dryRun:
+                    if createBsDir:
+                        sampleOutputDirectory = os.path.join(outputDirectory, sampleId)
+                    else:
+                        sampleOutputDirectory = outputDirectory
+                    sampleFile.downloadFile(myAPI, sampleOutputDirectory, createBsDir=createBsDir)
+                i = i + 1
         print "Download complete."
 
 if __name__ == '__main__':
