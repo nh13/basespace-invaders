@@ -23,14 +23,16 @@ from optparse import OptionParser, OptionGroup
 from urllib2 import Request, urlopen, URLError
 from BaseSpacePy.api.BaseSpaceAPI import BaseSpaceAPI
 from BaseSpacePy.model.QueryParameters import QueryParameters as qp
+from BaseSpacePy.api import BaseSpaceException
 import logging
+import time
 
 class AppResults:
     
     logging.basicConfig()
 
     @staticmethod
-    def download(clientKey=None, clientSecret=None, accessToken=None, appResultId=None, fileNameRegexesInclude=list(), fileNameRegexesOmit=list(), outputDirectory='\.', createBsDir=True):
+    def download(clientKey=None, clientSecret=None, accessToken=None, appResultId=None, fileNameRegexesInclude=list(), fileNameRegexesOmit=list(), outputDirectory='\.', createBsDir=True, force=False, numRetries=3):
         '''
         Downloads App Result files.
 
@@ -45,11 +47,14 @@ class AppResults:
         :param fileNameRegexesOmit a list of regexes on which to omit files based on name (takes precedence over include)
         :param outputDirectory the root output directory
         :param createBsDir true to recreate the path structure within BaseSpace, false otherwise
+        :param force use the force: overwrite existing files if true, false otherwise
+        :param numRetries the number of retries for a single download API call
         '''
         appSessionId = ''
         apiServer = 'https://api.basespace.illumina.com/' # or 'https://api.cloud-hoth.illumina.com/'
         apiVersion = 'v1pre3'
         fileLimit = 10000
+        sleepTime = 1.0
 
         # init the API
         if None != clientKey:
@@ -93,7 +98,30 @@ class AppResults:
             print 'Downloading (%d/%d): %s' % ((i+1), len(filesToDownload), str(appResultFile))
             print "File Path: %s" % appResultFile.Path
             if not options.dryRun:
-                appResultFile.downloadFile(myAPI, outputDirectory, createBsDir=createBsDir)
+                outputPath = str(appResultFile.Path) 
+                if not createBsDir:
+                    outputPath = os.path.basename(outputPath)
+                if os.path.exists(outputPath):
+                    if force:
+                        print "Overwritting: %s" % outputPath
+                    else:
+                        print "Skipping existing file: %s" % outputPath
+                        continue
+                else:
+                    print "Downloading to: %s" % outputPath
+                retryIdx = 0
+                retryException = None
+                while retryIdx < numRetries:
+                    try:
+                        appResultFile.downloadFile(myAPI, outputDirectory, createBsDir=createBsDir)
+                    except BaseSpaceException.ServerResponseException as e:
+                        retryIdx += 1
+                        time.sleep(sleepTime)
+                        retryException = e
+                    else:
+                        break
+                if retryIdx == numRetries:
+                    raise retryException
         print "Download complete."
 
 if __name__ == '__main__':
@@ -123,6 +151,8 @@ if __name__ == '__main__':
     group.add_option('-o', '--output-directory', help='the output directory', dest='outputDirectory', default='./')
     group.add_option('-b', '--create-basespace-directory-structure', help='recreate the basespace directory structure in the output directory', \
             dest='createBsDir', action='store_false', default=True)
+    group.add_option('-f', '--force-overwrite', help='force overwrite if files are present', dest='force', action='store_true', default=False)
+    group.add_option('-n', '--num-retries', help='the number of retries for a download API call', dest='numRetries', default=3)
     parser.add_option_group(group)
     
     options, args = parser.parse_args()
@@ -137,4 +167,5 @@ if __name__ == '__main__':
 
     AppResults.download(options.clientKey, options.clientSecret, options.accessToken, \
             options.appResultId, options.fileNameRegexesInclude, options.fileNameRegexesOmit, \
-            outputDirectory=options.outputDirectory, createBsDir=options.createBsDir)
+            outputDirectory=options.outputDirectory, createBsDir=options.createBsDir, \
+            force=options.force, numRetries=options.numRetries)
