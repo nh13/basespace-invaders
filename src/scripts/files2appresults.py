@@ -98,9 +98,9 @@ class AppResults:
         # walk the current directory structure
         for root, dirs, files in os.walk(inputDirectory):
             for fileName in files:
-                localPath = os.path.join(root, fn)
+                localPath = os.path.join(root, fileName)
                 directory = root.replace(inputDirectory, "") 
-                if isBinaryContent(fileName):
+                if AppResults.isBinaryContent(fileName):
                     contentType = 'application/octet-stream'
                 else:
                     contentType = 'text/plain'
