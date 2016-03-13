@@ -65,7 +65,7 @@ class AppResults:
         if None != clientKey:
             myAPI = BaseSpaceAPI(clientKey, clientSecret, apiServer, apiVersion, appSessionId, accessToken)
         else:
-            myAPI = BaseSpaceAPI(profile='DEFAULT')
+            myAPI = BaseSpaceAPI(profile='DEFAULT', clientKey=clientKey, clientSecret=clientSecret, AccessToken=accessToken)
 
         # get the current user
         user = myAPI.getUserById('current')
