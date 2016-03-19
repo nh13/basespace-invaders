@@ -107,7 +107,19 @@ class AppResults:
                 if keepFile(fileName):
                     print "Uploading file: %s" % localPath
                     if not options.dryRun:
-                        appResult.uploadFile(api=myAPI, localPath=localPath, fileName=fileName, directory=directory, contentType=contentType)
+                        retryIdx = 0
+                        retryException = None
+                        while retryIdx < numRetries:
+                            try:
+                                appResult.uploadFile(api=myAPI, localPath=localPath, fileName=fileName, directory=directory, contentType=contentType)
+                            except BaseSpaceException.ServerResponseException as e:
+                                retryIdx += 1
+                                time.sleep(sleepTime)
+                                retryException = e
+                            else:
+                                break
+                        if retryIdx == numRetries:
+                            raise retryException
         print "Upload complete"
 
 if __name__ == '__main__':
