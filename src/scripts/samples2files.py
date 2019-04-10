@@ -72,7 +72,7 @@ class Samples:
         appSessionId = ''
         apiServer = 'https://api.basespace.illumina.com/' # or 'https://api.cloud-hoth.illumina.com/'
         apiVersion = 'v1pre3'
-        projectLimit = 100         
+        projectLimit = 1024
         sampleLimit = 1024         
         sampleFileLimit = 1024 
 
@@ -89,14 +89,22 @@ class Samples:
         if None != projectId:
             sampleToFiles = Samples.__get_files_to_download(myAPI, projectId, sampleId, sampleName, sampleLimit, sampleFileLimit)
         else:
-            myProjects = myAPI.getProjectByUser(qp({'Limit' : projectLimit}))
-            for project in myProjects:
-                projectId = project.Id
-                if None != projectName and project.Name != projectName:
-                    continue
-                sampleToFiles = Samples.__get_files_to_download(myAPI, projectId, sampleId, sampleName, sampleLimit, sampleFileLimit)
+            offset = 0
+            while True:
+                myProjects = myAPI.getProjectByUser(qp({'Limit' : projectLimit, 'Offset' : offset}))
+                if len(myProjects) == 0:
+                    break
+                for project in myProjects:
+                    projectId = project.Id
+                    sys.stderr.write("project.Name: " + str(project.Name)  + " projectName: " + str(projectName) + '\n')
+                    if None != projectName and project.Name != projectName:
+                        continue
+                    sampleToFiles = Samples.__get_files_to_download(myAPI, projectId, sampleId, sampleName, sampleLimit, sampleFileLimit)
+                    if 0 < len(sampleToFiles):
+                        break
                 if 0 < len(sampleToFiles):
                     break
+                offset += projectLimit
         numFiles = sum([len(sampleToFiles[sampleId]) for sampleId in sampleToFiles])
         print "Will download files from %d ." % numFiles
         i = 0
